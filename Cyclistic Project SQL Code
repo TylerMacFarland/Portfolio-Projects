@@ -1,0 +1,69 @@
+/*
+Cyclistic Capstone Project
+*/
+
+-- Create Table for the data that will be imported 
+
+CREATE TABLE IF NOT EXISTS rides
+(
+    ride_id VARCHAR(100),
+    rideable_type VARCHAR(50),
+    started_at TIMESTAMP,
+    ended_at TIMESTAMP,
+    start_station_name VARCHAR(100),
+    start_station_id VARCHAR(50),
+    end_station_name VARCHAR(100),
+    end_station_id VARCHAR(50),
+    start_lat NUMERIC(7,5),
+    start_lng NUMERIC(7,5),
+    end_lat NUMERIC(7,5),
+    end_lng NUMERIC(7,5),
+    member_casual VARCHAR(20)
+)
+
+-- Average ride length 
+-- Sorted by Month and Membership.
+-- Filters out any data where the ended_at date occurs before the started_at date  
+-- Filters out all "docked_bike" type.
+
+SELECT 
+	COUNT(*),
+	member_casual,
+	EXTRACT(MONTH FROM started_at) AS month,
+	AVG((ended_at)-(started_at)) AS avg_ride_duration
+FROM rides
+WHERE ended_at > started_at AND 
+	rideable_type NOT LIKE 'docked%'
+GROUP BY member_casual, month
+ORDER BY month
+
+-- Days of the week the bikers use the bike share. 
+-- Filters out any data where the ended_at date occurs before the started_at date  
+-- Filters out all "docked_bike" type. 
+-- Note that 0 = Sunday in this case.
+
+SELECT 
+	COUNT(*),
+	member_casual,
+	EXTRACT(DOW FROM started_at) AS day,
+	AVG((ended_at)-(started_at)) AS avg_ride_duration
+FROM rides
+WHERE 
+	ended_at > started_at AND 
+	rideable_type NOT LIKE 'docked%'
+GROUP BY member_casual, day
+ORDER BY day
+
+-- Selecting the type of bike used by member type. 
+-- Excludes all docked_bike type.
+
+SELECT COUNT(*),
+	member_casual,
+	rideable_type,
+	AVG((ended_at)-(started_at)) AS avg_ride_duration
+FROM rides
+WHERE 
+	ended_at > started_at AND 
+	rideable_type NOT LIKE 'docked%'
+GROUP BY member_casual, rideable_type
+
