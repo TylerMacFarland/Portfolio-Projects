@@ -67,3 +67,14 @@ WHERE
 	rideable_type NOT LIKE 'docked%'
 GROUP BY member_casual, rideable_type
 
+-- Selecting the Starting locations
+-- Sorting by user type
+--Ordering by most popular to least popular
+
+SELECT 
+	COUNT(*),
+	start_station_name,
+	member_casual
+FROM rides
+GROUP BY start_station_name,member_casual
+ORDER BY COUNT(*) DESC
