@@ -1,0 +1,123 @@
+/*
+
+Cleaning Data in PostgreSQL
+
+*/
+
+--------------------------------------------------------------------------------------------------------------------------
+
+-- Populate “property_address” data
+
+SELECT *
+FROM house
+ORDER BY parcelid
+
+SELECT 
+	a.parcelid, 
+	b.parcelid, 
+	a.property_address, 
+	b.property_address
+FROM house AS a
+JOIN house AS b
+	ON a.parcelid = b.parcelid
+	AND a.uniqueid != b.uniqueid
+WHERE a.property_address IS NULL
+
+UPDATE house a
+SET property_address = b.property_address
+FROM house b
+WHERE a.parcelid = b.parcelid
+  AND a.uniqueid <> b.uniqueid
+  AND a.property_address IS NULL
+
+--------------------------------------------------------------------------------------------------------------------------
+
+-- Separating “property_address” into Individual Columns (address, city)
+
+SELECT
+	SUBSTRING(property_address, 1, STRPOS(property_address, ',')-1) AS address,
+  SUBSTRING(property_address,STRPOS(property_address,',')+1,STRPOS(property_address,',')) AS city
+FROM house
+
+ALTER TABLE house
+ADD address VARCHAR(100),
+ADD city VARCHAR(100)
+
+UPDATE house
+SET address = SUBSTRING(property_address, 1, STRPOS(property_address, ',')-1)
+
+UPDATE house
+SET city = SUBSTRING(property_address,STRPOS(property_address,',')+1,STRPOS(property_address,','))
+
+--------------------------------------------------------------------------------------------------------------------------
+
+-- Separating “owner_address” into Individual Columns (owner_address, owner_city, owner_state)
+
+SELECT 
+	SPLIT_PART(owner_address,',',1) AS owner_address,
+	SPLIT_PART(owner_address,',',2) AS owner_city,
+	SPLIT_PART(owner_address,',',3) AS owner_state
+FROM house
+
+ALTER TABLE house
+ADD owner_split_address VARCHAR(200),
+ADD owner_city VARCHAR(200),
+ADD owner_state VARCHAR(200)
+
+UPDATE house
+SET owner_split_address = SPLIT_PART(owner_address,',',1)
+
+UPDATE house
+SET owner_city = SPLIT_PART(owner_address,',',2)
+
+UPDATE house
+SET owner_state = SPLIT_PART(owner_address,',',3)
+
+--------------------------------------------------------------------------------------------------------------------------
+
+-- Change "Y" and "N" to "Yes" and "No" in "sold_as_vacant" field 
+
+SELECT DISTINCT(sold_as_vacant),
+COUNT(sold_as_vacant)
+FROM house
+GROUP BY sold_as_vacant
+ORDER BY COUNT
+
+SELECT 
+	sold_as_vacant,
+	CASE WHEN sold_as_vacant = 'Y' THEN 'Yes'
+	WHEN sold_as_vacant = 'N' THEN 'No'
+	ELSE sold_as_vacant END
+FROM house
+
+UPDATE house
+SET sold_as_vacant = 
+	CASE WHEN sold_as_vacant = 'Y' THEN 'Yes'
+	WHEN sold_as_vacant = 'N' THEN 'No'
+	ELSE sold_as_vacant END
+
+-------------------------------------------------------------------------------------------------------------------------------
+
+-- Discover Duplicates 
+
+WITH duplicates AS(
+SELECT *,
+	ROW_NUMBER() OVER(
+	PARTITION BY parcelid,
+				property_address,
+				sale_price,
+				sale_date,
+				legal_reference
+		ORDER BY uniqueid
+	) AS row_num
+FROM house)
+SELECT *
+FROM duplicates
+WHERE row_num >1
+
+---------------------------------------------------------------------------------------------------------
+
+-- Delete Unused Columns
+
+ALTER TABLE house
+DROP COLUMN property_address, owner_address, tax_district
