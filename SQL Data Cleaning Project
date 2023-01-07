@@ -36,7 +36,7 @@ WHERE a.parcelid = b.parcelid
 
 SELECT
 	SUBSTRING(property_address, 1, STRPOS(property_address, ',')-1) AS address,
-  SUBSTRING(property_address,STRPOS(property_address,',')+1,STRPOS(property_address,',')) AS city
+  	SUBSTRING(property_address,STRPOS(property_address,',')+1,STRPOS(property_address,',')) AS city
 FROM house
 
 ALTER TABLE house
